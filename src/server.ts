@@ -1,7 +1,12 @@
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+import express, { Request, Response } from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { connectDB } from './config/db';
+
+// Import routes
+import userRoutes from './routes/userRoutes';
+import productRoutes from './routes/productRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 
 dotenv.config();
 const app = express();
@@ -10,18 +15,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Connexion à la BDD
-const connectDB = require('./config/db');
+// Connect to database
 connectDB();
 
 // Routes
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.send('CRM backend is running ✅');
 });
 
-// Exemple de route utilisateur
-const userRoutes = require('./routes/userRoutes');
+// User routes
 app.use('/api/users', userRoutes);
+
+// Product routes
+app.use('/api/products', productRoutes);
+
+// Category routes
+app.use('/api/categories', categoryRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
