@@ -1,23 +1,20 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction } from 'express'
+import jwt, { JwtPayload } from 'jsonwebtoken'
 
-interface UserPayload {
-  id: string;
-}
+export const auth = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization
+  if (!authHeader) return res.status(401).json({ message: 'Token manquant' })
 
-interface RequestWithUser extends Request {
-  user?: UserPayload;
-}
-
-export const auth = (req: RequestWithUser, res: Response, next: NextFunction): void => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Accès refusé. Pas de token.' });
+  const token = authHeader.split(' ')[1]
+  if (!token) return res.status(401).json({ message: 'Token manquant' })
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as UserPayload;
-    req.user = decoded; // contient l'ID
-    next();
-  } catch (err) {
-    res.status(401).json({ message: 'Token invalide' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload
+
+    (req as any).user = decoded
+
+    next()
+  } catch {
+    return res.status(401).json({ message: 'Token invalide' })
   }
-};
+}
