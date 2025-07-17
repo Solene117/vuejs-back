@@ -48,7 +48,7 @@ export async function getOrders(req: Request, res: Response) {
     if (user.role === 'admin') {
       orders = await Order.find().sort({ createdAt: -1 })
     } else {
-      orders = await Order.find({ user: user.id }).sort({ createdAt: -1 })
+      orders = await Order.find({ user: user._id }).sort({ createdAt: -1 })
     }
 
     res.json(orders)
