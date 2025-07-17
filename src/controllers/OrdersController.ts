@@ -27,7 +27,7 @@ export const createOrder = async (req: Request, res: Response) => {
       user: userId,
       items,
       total,
-      status: 'en attente', 
+      status: 'En attente', 
     });
 
     await order.save();
@@ -40,15 +40,18 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 };
 
-// GET /api/orders/my-orders
 export async function getOrders(req: Request, res: Response) {
   try {
     const user = req.user 
     let orders
     if (user.role === 'admin') {
-      orders = await Order.find().sort({ createdAt: -1 })
+      orders = await Order.find()
+        .populate('user', 'firstname lastname') 
+        .sort({ createdAt: -1 })
     } else {
-      orders = await Order.find({ user: user._id }).sort({ createdAt: -1 })
+      orders = await Order.find({ user: user._id })
+        .populate('user', 'firstname lastname') 
+        .sort({ createdAt: -1 })
     }
 
     res.json(orders)
@@ -57,3 +60,4 @@ export async function getOrders(req: Request, res: Response) {
     res.status(500).json({ message: 'Erreur serveur' })
   }
 }
+
