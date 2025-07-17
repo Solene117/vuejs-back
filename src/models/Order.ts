@@ -1,10 +1,10 @@
-import mongoose from 'mongoose'
+import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     items: [
@@ -21,10 +21,24 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: 'en attente',
+      default: "en attente",
+    },
+    billingAddress: {
+      fullname: String,
+      street: String,
+      city: String,
+      postalCode: String,
+      country: String,
+    },
+    shippingAddress: {
+      fullname: String,
+      street: String,
+      city: String,
+      postalCode: String,
+      country: String,
     },
   },
   { timestamps: true }
-)
+);
 
-export default mongoose.model('Order', orderSchema)
+export default mongoose.model("Order", orderSchema);

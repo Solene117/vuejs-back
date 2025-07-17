@@ -7,7 +7,7 @@ const validStatuses = ["En attente", "Payée", "Annulée", "Livrée", "En cours"
 export const createOrder = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user._id;
-    const { items, total } = req.body;
+    const { items, total, billingAddress, shippingAddress } = req.body;
 
     for (const item of items) {
       const product = await Product.findById(item.id);
@@ -33,6 +33,8 @@ export const createOrder = async (req: Request, res: Response) => {
       items,
       total,
       status: "En attente",
+      billingAddress,
+      shippingAddress,
     });
 
     await order.save();
