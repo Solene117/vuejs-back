@@ -7,6 +7,7 @@ import { connectDB } from './config/db';
 import userRoutes from './routes/userRoutes';
 import productRoutes from './routes/productRoutes';
 import categoryRoutes from './routes/categoryRoutes';
+import orderRoutes from './routes/ordersRoutes';
 
 dotenv.config();
 const app = express();
@@ -31,6 +32,9 @@ app.use('/api/products', productRoutes);
 
 // Category routes
 app.use('/api/categories', categoryRoutes);
+
+// Order routes
+app.use('/api/orders', orderRoutes)
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

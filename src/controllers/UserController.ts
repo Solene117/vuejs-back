@@ -26,7 +26,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 export const getProfile = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user.id;
+    const userId = (req as any).user._id;
     const user = await User.findById(userId).select('-password');
     if (!user) {
       res.status(404).json({ message: 'Utilisateur non trouvé' });
@@ -40,7 +40,7 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
 
 export const updateProfile = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user.id;
+    const userId = (req as any).user._id;
     const { firstname, lastname, email } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(
