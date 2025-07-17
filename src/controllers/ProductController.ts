@@ -5,7 +5,10 @@ import Category from '../models/Category';
 // Get all products
 export const getAllProducts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const products = await Product.find();
+    const limit = parseInt(req.query.limit as string) || 0; // 0 signifie "pas de limite"
+    
+    const products = await Product.find().limit(limit);
+    
     res.status(200).json(products);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
