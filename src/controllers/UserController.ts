@@ -75,3 +75,83 @@ export const updateProfile = async (
       .json({ message: err.message || "Erreur lors de la mise à jour" });
   }
 };
+
+// Récupérer tous les utilisateurs
+export const getAllUsers = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const user = (req as any).user;
+
+    if (user.role !== "admin") {
+      res.status(403).json({ message: "Accès refusé" });
+      return;
+    }
+
+    const users = await User.find().select("-password");
+    res.json(users);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || "Erreur serveur" });
+  }
+};
+
+// Modifier un utilisateur par son ID
+export const updateUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const user = (req as any).user;
+    if (user.role !== "admin") {
+      res.status(403).json({ message: "Accès refusé" });
+      return;
+    }
+
+    const { id } = req.params;
+    const { firstname, lastname, email, role } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { firstname, lastname, email, role },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      res.status(404).json({ message: "Utilisateur non trouvé" });
+      return;
+    }
+
+    res.json(updatedUser);
+  } catch (err: any) {
+    res
+      .status(400)
+      .json({ message: err.message || "Erreur lors de la mise à jour" });
+  }
+};
+
+// Supprimer un utilisateur par son ID
+export const deleteUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const user = (req as any).user;
+    if (user.role !== "admin") {
+      res.status(403).json({ message: "Accès refusé" });
+      return;
+    }
+
+    const { id } = req.params;
+    const deleted = await User.findByIdAndDelete(id);
+
+    if (!deleted) {
+      res.status(404).json({ message: "Utilisateur non trouvé" });
+      return;
+    }
+
+    res.json({ message: "Utilisateur supprimé avec succès" });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || "Erreur serveur" });
+  }
+};
