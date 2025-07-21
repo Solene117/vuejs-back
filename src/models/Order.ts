@@ -24,14 +24,12 @@ const orderSchema = new mongoose.Schema(
       default: "en attente",
     },
     billingAddress: {
-      fullname: String,
       street: String,
       city: String,
       postalCode: String,
       country: String,
     },
     shippingAddress: {
-      fullname: String,
       street: String,
       city: String,
       postalCode: String,
