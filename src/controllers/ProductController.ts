@@ -44,7 +44,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
 
 // Create a product
 export const createProduct = async (req: Request, res: Response): Promise<void> => {
-  const { ref, name, category, unit, billingFrequency, unitPrice, currency } = req.body;
+  const { ref, name, category, unit, billingFrequency, unitPrice, currency, stock = 0 } = req.body;
   
   try {
     // Vérifier si la catégorie existe
@@ -84,7 +84,8 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
       unit: unitExists.name,
       billingFrequency: billingFrequencyExists.name,
       unitPrice,
-      currency: currencyExists.name
+      currency: currencyExists.name,
+      stock
     });
     
     // Récupérer le produit avec les références peuplées
@@ -126,7 +127,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         res.status(400).json({ message: `Unit "${unitName}" not found` });
         return;
       }
-      updateData.unit = unitExists._id;
+      updateData.unit = unitExists.name;
     }
     
     if (billingFrequencyName) {
@@ -135,7 +136,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         res.status(400).json({ message: `Billing frequency "${billingFrequencyName}" not found` });
         return;
       }
-      updateData.billingFrequency = billingFrequencyExists._id;
+      updateData.billingFrequency = billingFrequencyExists.name;
     }
     
     if (currencyName) {
@@ -144,7 +145,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         res.status(400).json({ message: `Currency "${currencyName}" not found` });
         return;
       }
-      updateData.currency = currencyExists._id;
+      updateData.currency = currencyExists.name;
     }
     
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -181,5 +182,31 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+// Update stock
+export const updateStock = async (req: Request, res: Response): Promise<void> => {
+  const { stock } = req.body;
+  
+  if (stock === undefined) {
+    res.status(400).json({ message: 'Stock value is required' });
+    return;
+  }
+  
+  try {
+    const product = await Product.findById(req.params.id);
+    
+    if (!product) {
+      res.status(404).json({ message: 'Product not found' });
+      return;
+    }
+    
+    product.stock = stock;
+    await product.save();
+    
+    res.status(200).json(product);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
   }
 }; 

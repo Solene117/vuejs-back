@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct } from '../controllers/ProductController';
+import { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct, updateStock } from '../controllers/ProductController';
 import { auth } from '../middleware/auth';
 
 const router = express.Router();
@@ -18,5 +18,8 @@ router.put('/:id', auth, updateProduct);
 
 // Delete a product - protected route
 router.delete('/:id', auth, deleteProduct);
+
+// Update product stock - protected route
+router.patch('/:id/stock', auth, updateStock);
 
 export default router; 

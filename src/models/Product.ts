@@ -8,6 +8,7 @@ const productSchema = new mongoose.Schema({
   billingFrequency: { type: String, required: true },
   unitPrice: { type: Number, required: true },
   currency: { type: String, required: true },
+  stock: { type: Number, required: true, default: 0 },
 }, { timestamps: true });
 
 export default mongoose.model('Product', productSchema); 
