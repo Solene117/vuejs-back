@@ -1,13 +1,21 @@
 import { Request, Response } from 'express';
 import Product from '../models/Product';
 import Category from '../models/Category';
+import Unit from '../models/Unit';
+import BillingFrequency from '../models/BillingFrequency';
+import Currency from '../models/Currency';
 
 // Get all products
 export const getAllProducts = async (req: Request, res: Response): Promise<void> => {
   try {
     const limit = parseInt(req.query.limit as string) || 0; // 0 signifie "pas de limite"
     
-    const products = await Product.find().limit(limit);
+    const products = await Product.find()
+      .populate('category')
+      .populate('unit')
+      .populate('billingFrequency')
+      .populate('currency')
+      .limit(limit);
     
     res.status(200).json(products);
   } catch (err: any) {
@@ -18,9 +26,15 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
 // Get a single product
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id)
+      .populate('category')
+      .populate('unit')
+      .populate('billingFrequency')
+      .populate('currency');
+      
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      res.status(404).json({ message: 'Product not found' });
+      return;
     }
     res.status(200).json(product);
   } catch (err: any) {
@@ -44,16 +58,43 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
       });
     }
     
+    // Vérifier si les références existent
+    const unitExists = await Unit.findOne({ name: unit });
+    if (!unitExists) {
+      res.status(400).json({ message: `Unit "${unit}" not found` });
+      return;
+    }
+    
+    const billingFrequencyExists = await BillingFrequency.findOne({ name: billingFrequency });
+    if (!billingFrequencyExists) {
+      res.status(400).json({ message: `Billing frequency "${billingFrequency}" not found` });
+      return;
+    }
+    
+    const currencyExists = await Currency.findOne({ name: currency });
+    if (!currencyExists) {
+      res.status(400).json({ message: `Currency "${currency}" not found` });
+      return;
+    }
+    
     const product = await Product.create({
       ref,
       name,
       category,
-      unit,
-      billingFrequency,
+      unit: unitExists.name,
+      billingFrequency: billingFrequencyExists.name,
       unitPrice,
-      currency
+      currency: currencyExists.name
     });
-    res.status(201).json(product);
+    
+    // Récupérer le produit avec les références peuplées
+    const populatedProduct = await Product.findById(product._id)
+      .populate('category')
+      .populate('unit')
+      .populate('billingFrequency')
+      .populate('currency');
+      
+    res.status(201).json(populatedProduct);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
   }
@@ -61,28 +102,64 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
 
 // Update a product
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
+  const { unitName, billingFrequencyName, currencyName, ...otherData } = req.body;
+  const updateData = { ...otherData };
+  
   try {
     // Si la catégorie est mise à jour, vérifier qu'elle existe
-    if (req.body.category) {
-      let categoryExists = await Category.findOne({ name: req.body.category });
+    if (otherData.category) {
+      let categoryExists = await Category.findOne({ name: otherData.category });
       
       // Si la catégorie n'existe pas, la créer
       if (!categoryExists) {
         await Category.create({
-          name: req.body.category,
+          name: otherData.category,
           description: ''
         });
       }
     }
     
+    // Vérifier et mettre à jour les références si elles sont fournies
+    if (unitName) {
+      const unitExists = await Unit.findOne({ name: unitName });
+      if (!unitExists) {
+        res.status(400).json({ message: `Unit "${unitName}" not found` });
+        return;
+      }
+      updateData.unit = unitExists._id;
+    }
+    
+    if (billingFrequencyName) {
+      const billingFrequencyExists = await BillingFrequency.findOne({ name: billingFrequencyName });
+      if (!billingFrequencyExists) {
+        res.status(400).json({ message: `Billing frequency "${billingFrequencyName}" not found` });
+        return;
+      }
+      updateData.billingFrequency = billingFrequencyExists._id;
+    }
+    
+    if (currencyName) {
+      const currencyExists = await Currency.findOne({ name: currencyName });
+      if (!currencyExists) {
+        res.status(400).json({ message: `Currency "${currencyName}" not found` });
+        return;
+      }
+      updateData.currency = currencyExists._id;
+    }
+    
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
-    );
+    )
+    .populate('category')
+    .populate('unit')
+    .populate('billingFrequency')
+    .populate('currency');
     
     if (!updatedProduct) {
-      return res.status(404).json({ message: 'Product not found' });
+      res.status(404).json({ message: 'Product not found' });
+      return;
     }
     
     res.status(200).json(updatedProduct);
@@ -97,7 +174,8 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
     const product = await Product.findByIdAndDelete(req.params.id);
     
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      res.status(404).json({ message: 'Product not found' });
+      return;
     }
     
     res.status(200).json({ message: 'Product deleted successfully' });

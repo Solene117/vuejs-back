@@ -8,6 +8,9 @@ import userRoutes from './routes/userRoutes';
 import productRoutes from './routes/productRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import orderRoutes from './routes/ordersRoutes';
+import billingFrequencyRoutes from './routes/billingFrequencyRoutes';
+import currencyRoutes from './routes/currencyRoutes';
+import unitRoutes from './routes/unitRoutes';
 
 dotenv.config();
 const app = express();
@@ -34,7 +37,16 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 
 // Order routes
-app.use('/api/orders', orderRoutes)
+app.use('/api/orders', orderRoutes);
+
+// BillingFrequency routes
+app.use('/api/billing-frequencies', billingFrequencyRoutes);
+
+// Currency routes
+app.use('/api/currencies', currencyRoutes);
+
+// Unit routes
+app.use('/api/units', unitRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
