@@ -27,8 +27,9 @@ export const getUnitById = async (req: Request, res: Response): Promise<void> =>
 
 // Create a unit
 export const createUnit = async (req: Request, res: Response): Promise<void> => {
-  const { code, name, symbol } = req.body;
-  
+    console.log(req.body);
+  const { name } = req.body;
+
   try {
     const unit = await Unit.create({
       name
