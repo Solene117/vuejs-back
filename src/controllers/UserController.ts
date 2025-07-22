@@ -155,3 +155,41 @@ export const deleteUser = async (
     res.status(500).json({ message: err.message || "Erreur serveur" });
   }
 };
+
+export const createUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const currentUser = (req as any).user;
+    if (currentUser.role !== "admin") {
+      res.status(403).json({ message: "Accès refusé : admin uniquement" });
+      return;
+    }
+
+    const { email, password, firstname, lastname, role = 'user', billingAddress } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      res.status(400).json({ message: "Un utilisateur avec cet email existe déjà." });
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await User.create({
+      email,
+      password: hashedPassword,
+      firstname,
+      lastname,
+      role,
+      billingAddress,
+    });
+
+    res.status(201).json({
+      _id: newUser._id,
+      email: newUser.email,
+      firstname: newUser.firstname,
+      lastname: newUser.lastname,
+      role: newUser.role,
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || "Erreur lors de la création" });
+  }
+};
