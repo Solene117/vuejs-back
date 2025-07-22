@@ -1,51 +1,71 @@
 import { Request, Response } from "express";
 import Order from "../models/Order";
 import Product from "../models/Product";
+import User from '../models/User'
 import PDFDocument from 'pdfkit'
 
 const validStatuses = ["En attente", "Payée", "Annulée", "Livrée", "En cours"];
 // POST /api/orders
-export const createOrder = async (req: Request, res: Response) => {
+export const createOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user._id;
-    const { items, total, billingAddress, shippingAddress } = req.body;
+    const { userId, items } = req.body
 
-    for (const item of items) {
-      const product = await Product.findById(item.id);
-      if (!product) {
-        return res
-          .status(404)
-          .json({ message: `Produit ${item.name} introuvable.` });
-      }
-
-      if (product.unit < item.quantity) {
-        return res
-          .status(400)
-          .json({ message: `Stock insuffisant pour le produit ${item.name}.` });
-      }
-
-      product.unit -= item.quantity;
-      await product.save();
+    // Vérifier si l'utilisateur existe
+    const user = await User.findById(userId)
+    if (!user) {
+      res.status(404).json({ message: "Utilisateur non trouvé." })
+      return
     }
 
-    // Créer la commande
-    const order = new Order({
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      res.status(400).json({ message: "Aucun article fourni." })
+      return
+    }
+
+    // Construire les items de la commande
+    const orderItems = await Promise.all(
+      items.map(async (item: { productId: string, stock: number }) => {
+        const article = await Product.findById(item.productId)
+
+        if (!article) {
+          throw new Error(`Article avec l'ID ${item.productId} introuvable.`)
+        }
+
+        if (item.stock > article.stock) {
+          throw new Error(`Stock insuffisant pour l'article ${article.name}.`)
+        }
+
+        // Mettre à jour le stock
+        article.stock -= item.stock
+        await article.save()
+
+        return {
+          id: article._id,
+          name: article.name,
+          price: article.unitPrice,
+          quantity: item.stock,
+        }
+      })
+    )
+
+    // Calcul du total
+    const total = orderItems.reduce((acc, item) => acc + item.price * item.quantity, 0)
+
+    // Création de la commande
+    const newOrder = await Order.create({
       user: userId,
-      items,
+      items: orderItems,
       total,
-      status: "En attente",
-      billingAddress,
-      shippingAddress,
-    });
+      status: 'En attente',
+    })
 
-    await order.save();
+    res.status(201).json(newOrder)
 
-    res.status(201).json(order);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erreur serveur" });
+  } catch (err: any) {
+    console.error('Erreur lors de la création de la commande:', err)
+    res.status(500).json({ message: err.message || "Erreur serveur" })
   }
-};
+}
 
 export async function getOrders(req: Request, res: Response) {
   try {
@@ -197,8 +217,8 @@ export const generatePDF = async (req: Request, res: Response) => {
     doc
       .font('Helvetica-Bold')
       .fontSize(14)
-      .text('Total à payer:', priceX, yPosition + 20, { width: 100, align: 'right' })
-      .text(order.total.toFixed(2) + ' €', totalX, yPosition + 20, { width: 70, align: 'right' })
+      .text('Total à payer :', priceX, yPosition + 20, { width: 100, align: 'right' })
+      .text(order.total.toFixed(2) + ' €', totalX, yPosition + 20, { width: 100, align: 'right' })
 
     doc
       .fontSize(10)
