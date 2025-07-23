@@ -109,11 +109,11 @@ export const updateUser = async (
     }
 
     const { id } = req.params;
-    const { firstname, lastname, email, role } = req.body;
+    const { firstname, lastname, email, role, billingAddress } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      { firstname, lastname, email, role },
+      { firstname, lastname, email, role, billingAddress },
       { new: true, runValidators: true }
     ).select("-password");
 
